@@ -6,17 +6,22 @@ module.exports = async (req, res) => {
 
   try {
 
-    const response = await axios.get(
-      "https://api.planningcenteronline.com/calendar/v2/events?include=tags",
+    const response =*await axios.get(
+      "https://api.planningcenteronline.com/calendar/v2/events?per_page=100",
       {
-        auth: {
+ *      auth: {
           username: process.env.PCO_CLIENT_ID,
           password: process.env.PCO_SECRET
         }
       }
     );
 
-    res.status(200).json(response.data.included);
+    const events = response.data.data.map(event => ({
+      title: event.attributes.name,
+      updated: event.attributes.updated_at
+    }));
+
+    res.status(200).json(events);
 
   } catch(error) {
 
