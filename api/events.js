@@ -16,11 +16,14 @@ module.exports = async (req, res) => {
       }
     );
 
-    const events = response.data.data.map(event => ({
-      id: event.id,
-      title: event.attributes.name,
-      description: event.attributes.description
-    }));
+    const events = response.data.data
+      .filter(event => event.attributes.featured === true)
+      .map(event => ({
+        id: event.id,
+        title: event.attributes.name,
+        description: event.attributes.description,
+        featured: event.attributes.featured
+      }));
 
     res.status(200).json(events);
 
