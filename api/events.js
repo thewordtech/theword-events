@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
   try {
 
     const response = await axios.get(
-      "https://api.planningcenteronline.com/calendar/v2/event_instances?order=starts_at",
+      "https://api.planningcenteronline.com/calendar/v2/events",
       {
         auth: {
           username: process.env.PCO_CLIENT_ID,
@@ -16,30 +16,15 @@ module.exports = async (req, res) => {
       }
     );
 
-    const now = new Date();
-
-    const events = response.data.data
-      .filter(event =>
-        new Date(event.attributes.starts_at) >= now
-      )
-      .map(event => ({
-
-        id: event.id,
-
-        title: event.attributes.name,
-
-        date: event.attributes.starts_at,
-
-        location: event.attributes.location,
-
-        url: event.attributes.church_center_url
-
-      }))
-      .slice(0, 25);
+    const events = response.data.data.map(event => ({
+      id: event.id,
+      title: event.attributes.name,
+      description: event.attributes.description
+    }));
 
     res.status(200).json(events);
 
-  } catch(error) {
+  } catch (error) {
 
     res.status(500).json({
       error: error.message
