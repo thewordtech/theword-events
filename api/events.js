@@ -2,15 +2,12 @@ const axios = require("axios");
 
 module.exports = async (req, res) => {
 
-  // Allow Squarespace to access this API
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   try {
 
     const response = await axios.get(
-      "https://api.planningcenteronline.com/calendar/v2/events",
+      "https://api.planningcenteronline.com/calendar/v2/event_instances",
       {
         auth: {
           username: process.env.PCO_CLIENT_ID,
@@ -19,19 +16,14 @@ module.exports = async (req, res) => {
       }
     );
 
-    const events = response.data.data.map(event => ({
-      id: event.id,
-      title: event.attributes.name,
-      description: event.attributes.description
-    }));
+    res.status(200).json(response.data);
 
-    return res.status(200).json(response.data);
+  } catch(error) {
 
-  } catch (error) {
-
-    return res.status(500).json({
+    res.status(500).json({
       error: error.message
     });
 
   }
+
 };
