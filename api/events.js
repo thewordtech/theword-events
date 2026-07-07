@@ -16,17 +16,14 @@ module.exports = async (req, res) => {
       }
     );
 
-    const events = response.data.data.map(event => ({
-      title: event.attributes.name,
-      featured: event.attributes.featured
-    }));
-
-    res.status(200).json(events);
+    res.status(200).json(response.data.data[0]);
 
   } catch (error) {
+
     res.status(500).json({
       error: error.message
     });
+
   }
 
 };
