@@ -6,19 +6,31 @@ module.exports = async (req, res) => {
 
   try {
 
-    const response = await axios.get(
-      "https://api.planningcenteronline.com/calendar/v2/events",
-      {
+    let url =
+      "https://api.planningcenteronline.com/calendar/v2/events?include=tags";
+
+    let allEvents = [];
+
+    while(url){
+
+      const response = await axios.get(url, {
         auth: {
           username: process.env.PCO_CLIENT_ID,
           password: process.env.PCO_SECRET
         }
-      }
-    );
+      });
 
-    res.status(200).json({
-      links: response.data.links
-    });
+      allEvents = allEvents.concat(response.data.data);
+
+      url = response.data.links.next || null;
+    }
+
+    res.status(200).json(
+      allEvents.map(event => ({
+        title: event.attributes.name,
+        updated: event.attributes.updated_at
+      }))
+    );
 
   } catch(error) {
 
@@ -27,4 +39,5 @@ module.exports = async (req, res) => {
     });
 
   }
+
 };
