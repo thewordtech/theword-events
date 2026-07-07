@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
   try {
 
     const response = await axios.get(
-      "https://api.planningcenteronline.com/calendar/v2/events?per_page=100",
+      "https://api.planningcenteronline.com/calendar/v2/event_instances?per_page=100",
       {
         auth: {
           username: process.env.PCO_CLIENT_ID,
@@ -16,14 +16,13 @@ module.exports = async (req, res) => {
       }
     );
 
-    const events = response.data.data
-      .filter(event =>
-        event.attributes.name.toLowerCase().includes("prophesy")
-      );
+    const matches = response.data.data.filter(item =>
+      item.attributes.name.toLowerCase().includes("prophes")
+    );
 
-    res.status(200).json(events);
+    res.status(200).json(matches);
 
-  } catch (error) {
+  } catch(error) {
 
     res.status(500).json({
       error: error.message
