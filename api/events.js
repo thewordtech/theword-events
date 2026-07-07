@@ -10,7 +10,6 @@ module.exports = async (req, res) => {
       "https://api.planningcenteronline.com/calendar/v2/events?include=tags";
 
     let allEvents = [];
-    let included = [];
 
     while (url) {
 
@@ -23,21 +22,20 @@ module.exports = async (req, res) => {
 
       allEvents = allEvents.concat(response.data.data);
 
-      if (response.data.included) {
-        included = included.concat(response.data.included);
-      }
-
       url = response.data.links.next || null;
     }
 
-    const prophesy = allEvents.filter(event =>
-      event.attributes.name.toLowerCase().includes("prophes")
-    );
+    const events = allEvents
+      .filter(event => event.attributes.featured === true)
+      .map(event => ({
+        id: event.id,
+        title: event.attributes.name,
+        summary: event.attributes.summary,
+        image: event.attributes.image_url,
+        url: event.links.html
+      }));
 
-    res.status(200).json({
-      event: prophesy,
-      tags: included
-    });
+    res.status(200).json(events);
 
   } catch(error) {
 
