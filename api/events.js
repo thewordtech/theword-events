@@ -1,9 +1,9 @@
-const axios = require('axios');
+const axios = require("axios");
 
 module.exports = async (req, res) => {
   try {
     const response = await axios.get(
-      'https://api.planningcenteronline.com/calendar/v2/events',
+      "https://api.planningcenteronline.com/calendar/v2/events",
       {
         auth: {
           username: process.env.PCO_CLIENT_ID,
@@ -12,7 +12,14 @@ module.exports = async (req, res) => {
       }
     );
 
-    res.status(200).json(response.data);
+    const events = response.data.data.map(event => ({
+      id: event.id,
+      title: event.attributes.name,
+      description: event.attributes.description
+    }));
+
+    res.status(200).json(events);
+
   } catch (error) {
     res.status(500).json({
       error: error.message
