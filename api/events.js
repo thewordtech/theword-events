@@ -10,8 +10,9 @@ module.exports = async (req, res) => {
       "https://api.planningcenteronline.com/calendar/v2/events?include=tags";
 
     let allEvents = [];
+    let included = [];
 
-    while(url){
+    while (url) {
 
       const response = await axios.get(url, {
         auth: {
@@ -22,15 +23,21 @@ module.exports = async (req, res) => {
 
       allEvents = allEvents.concat(response.data.data);
 
+      if (response.data.included) {
+        included = included.concat(response.data.included);
+      }
+
       url = response.data.links.next || null;
     }
 
-    res.status(200).json(
-      allEvents.map(event => ({
-        title: event.attributes.name,
-        updated: event.attributes.updated_at
-      }))
+    const prophesy = allEvents.filter(event =>
+      event.attributes.name.toLowerCase().includes("prophes")
     );
+
+    res.status(200).json({
+      event: prophesy,
+      tags: included
+    });
 
   } catch(error) {
 
