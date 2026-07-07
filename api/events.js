@@ -6,24 +6,24 @@ module.exports = async (req, res) => {
 
   try {
 
-    const response =*await axios.get(
+    const response = await axios.get(
       "https://api.planningcenteronline.com/calendar/v2/events?per_page=100",
       {
- *      auth: {
+        auth: {
           username: process.env.PCO_CLIENT_ID,
           password: process.env.PCO_SECRET
         }
       }
     );
 
-    const events = response.data.data.map(event => ({
-      title: event.attributes.name,
-      updated: event.attributes.updated_at
-    }));
+    const events = response.data.data
+      .filter(event =>
+        event.attributes.name.toLowerCase().includes("prophesy")
+      );
 
     res.status(200).json(events);
 
-  } catch(error) {
+  } catch (error) {
 
     res.status(500).json({
       error: error.message
