@@ -16,7 +16,7 @@ module.exports = async (req, res) => {
       }
     );
 
-    res.status(200).json(response.data);
+    res.status(200).json(response.data.included);
 
   } catch(error) {
 
