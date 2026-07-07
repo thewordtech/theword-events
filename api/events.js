@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
       description: event.attributes.description
     }));
 
-    return res.status(200).json(events);
+    return res.status(200).json(response.data);
 
   } catch (error) {
 
