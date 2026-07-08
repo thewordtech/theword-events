@@ -6,45 +6,90 @@ module.exports = async (req, res) => {
 
   try {
 
-    let url =
+    const auth = {
+      username: process.env.PCO_CLIENT_ID,
+      password: process.env.PCO_SECRET
+    };
+
+    // Load all events
+    let eventsUrl =
       "https://api.planningcenteronline.com/calendar/v2/events";
 
     let allEvents = [];
 
-    while (url) {
+    while(eventsUrl){
 
-      const response = await axios.get(url, {
-        auth: {
-          username: process.env.PCO_CLIENT_ID,
-          password: process.env.PCO_SECRET
-        }
-      });
+      const response =
+        await axios.get(eventsUrl,{auth});
 
-      allEvents = allEvents.concat(response.data.data);
+      allEvents =
+        allEvents.concat(response.data.data);
 
-      url = response.data.links.next || null;
+      eventsUrl =
+        response.data.links.next || null;
+
     }
 
-    const events = allEvents
-      .filter(event => event.attributes.featured === true)
-      .map(event => ({
-        id: event.id,
-        title: event.attributes.name,
-        summary: event.attributes.summary,
-        image: event.attributes.image_url
-          ? event.attributes.image_url.replace(/&amp;/g, "&")
-          : null,
-        url: event.links.html
-      }));
+    // Load event instances
+    let instancesUrl =
+      "https://api.planningcenteronline.com/calendar/v2/event_instances";
 
-    res.status(200).json(events);
+    let allInstances = [];
 
-  } catch (error) {
+    while(instancesUrl){
 
-    res.status(500).json({
-      error: error.message
-    });
+      const response =
+        await axios.get(instancesUrl,{auth});
 
-  }
+      allInstances =
+        allInstances.concat(response.data.data);
 
-};
+      instancesUrl =
+        response.data.links.next || null;
+
+    }
+
+    const now = new Date();
+
+    const futureFeaturedEvents =
+      allEvents
+
+      .filter(event =>
+        event.attributes.featured === true
+      )
+
+      .map(event => {
+
+        const futureInstances =
+          allInstances.filter(instance => {
+
+            return (
+              instance.relationships.event &&
+              instance.relationships.event.data &&
+              instance.relationships.event.data.id === event.id &&
+              new Date(
+                instance.attributes.starts_at
+              ) > now
+            );
+
+          });
+
+        if(!futureInstances.length)
+          return null;
+
+        futureInstances.sort(
+          (a,b) =>
+            new Date(a.attributes.starts_at) -
+            new Date(b.attributes.starts_at)
+        );
+
+        const nextDate =
+          futureInstances[0];
+
+        return {
+
+          id:
+            event.id,
+
+          title:
+ 
