@@ -111,21 +111,15 @@ module.exports = async (req, res) => {
 
         if (!event) return;
 
-        if (
-          event.sessions.length < 10
-        ) {
+        event.sessions.push({
 
-          event.sessions.push({
+  start:
+    instance.attributes.starts_at,
 
-            start:
-              instance.attributes.starts_at,
+  end:
+    instance.attributes.ends_at
 
-            end:
-              instance.attributes.ends_at
-
-          });
-
-        }
+});
 
         if (!event.date) {
 
