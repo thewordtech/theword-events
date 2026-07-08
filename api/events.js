@@ -11,99 +11,110 @@ module.exports = async (req, res) => {
       password: process.env.PCO_SECRET
     };
 
-    // Get all events
-    let url =
+    // Get all featured events
+    let eventsUrl =
       "https://api.planningcenteronline.com/calendar/v2/events";
 
-    let allEvents = [];
+    let featuredEvents = [];
 
-    while (url) {
+    while (eventsUrl) {
 
-      const response = await axios.get(url, {
-        auth
-      });
+      const response =
+        await axios.get(eventsUrl, { auth });
 
-      allEvents = allEvents.concat(response.data.data);
+      featuredEvents =
+        featuredEvents.concat(
 
-      url = response.data.links.next || null;
+          response.data.data.filter(
+            event => event.attributes.featured === true
+          )
+
+        );
+
+      eventsUrl =
+        response.data.links.next || null;
+
     }
 
-    // Get future instances
-    const today =
-      new Date().toISOString();
+    // Build lookup by event id
+    const featuredMap = {};
 
-    const instanceResponse =
-      await axios.get(
-        `https://api.planningcenteronline.com/calendar/v2/event_instances?where[starts_at][gte]=${today}&per_page=100`,
-        { auth }
-      );
+    featuredEvents.forEach(event => {
 
-    const futureInstances =
-      instanceResponse.data.data;
-
-    const futureMap = {};
-
-    futureInstances.forEach(instance => {
-
-      const eventId =
-        instance.relationships.event.data.id;
-
-      const startsAt =
-        instance.attributes.starts_at;
-
-      if (
-        !futureMap[eventId] ||
-        new Date(startsAt) <
-        new Date(futureMap[eventId].date)
-      ) {
-
-        futureMap[eventId] = {
-          date: startsAt,
-          location: instance.attributes.location,
-          url: instance.attributes.church_center_url
-        };
-      }
-
-    });
-
-    const events = allEvents
-
-      .filter(event =>
-        event.attributes.featured === true
-      )
-
-      .filter(event =>
-        futureMap[event.id]
-      )
-
-      .map(event => ({
+      featuredMap[event.id] = {
 
         id: event.id,
 
-        title:
-          event.attributes.name,
+        title: event.attributes.name,
 
-        summary:
-          event.attributes.summary,
+        summary: event.attributes.summary,
 
         image:
           event.attributes.image_url
             ? event.attributes.image_url.replace(/&amp;/g, "&")
             : null,
 
-        date:
-          futureMap[event.id].date,
+        date: null,
+        location: null,
+        url: null
 
-        location:
-          futureMap[event.id].location,
+      };
 
-        url:
-          futureMap[event.id].url
+    });
 
-      }))
+    const today =
+      new Date().toISOString();
+
+    let instancesUrl =
+      `https://api.planningcenteronline.com/calendar/v2/event_instances?where[starts_at][gte]=${today}&per_page=100`;
+
+    let foundCount = 0;
+
+    while (
+      instancesUrl &&
+      foundCount < featuredEvents.length
+    ) {
+
+      const response =
+        await axios.get(instancesUrl, { auth });
+
+      response.data.data.forEach(instance => {
+
+        const eventId =
+          instance.relationships.event.data.id;
+
+        if (
+          featuredMap[eventId] &&
+          !featuredMap[eventId].date
+        ) {
+
+          featuredMap[eventId].date =
+            instance.attributes.starts_at;
+
+          featuredMap[eventId].location =
+            instance.attributes.location;
+
+          featuredMap[eventId].url =
+            instance.attributes.church_center_url;
+
+          foundCount++;
+
+        }
+
+      });
+
+      instancesUrl =
+        response.data.links.next || null;
+
+    }
+
+    const events =
+      Object.values(featuredMap)
+
+      .filter(event => event.date)
 
       .sort(
-        (a,b) =>
+        (a, b) =>
           new Date(a.date) -
           new Date(b.date)
       );
