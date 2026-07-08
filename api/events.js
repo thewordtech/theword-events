@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
       password: process.env.PCO_SECRET
     };
 
-    // Get featured events
+    // Get all featured events
     let url =
       "https://api.planningcenteronline.com/calendar/v2/events";
 
@@ -19,7 +19,8 @@ module.exports = async (req, res) => {
 
     while (url) {
 
-      const response = await axios.get(url, { auth });
+      const response =
+        await axios.get(url, { auth });
 
       featuredEvents = featuredEvents.concat(
         response.data.data.filter(
@@ -27,10 +28,12 @@ module.exports = async (req, res) => {
         )
       );
 
-      url = response.data.links.next || null;
+      url =
+        response.data.links.next || null;
+
     }
 
-    // Future instances only
+    // Get future event instances
     const today =
       new Date().toISOString();
 
@@ -50,14 +53,17 @@ module.exports = async (req, res) => {
       const eventId =
         instance.relationships.event.data.id;
 
+      const startDate =
+        instance.attributes.starts_at;
+
       if (
         !eventMap[eventId] ||
-        new Date(instance.attributes.starts_at) <
+        new Date(startDate) <
         new Date(eventMap[eventId].date)
       ) {
 
         eventMap[eventId] = {
-          date: instance.attributes.starts_at,
+          date: startDate,
           location: instance.attributes.location,
           url: instance.attributes.church_center_url
         };
@@ -68,49 +74,11 @@ module.exports = async (req, res) => {
 
     const events = featuredEvents
 
-      .filter(event =>
-        eventMap[event.id]
-      )
+      .filter(event => eventMap[event.id])
 
       .map(event => ({
 
         id: event.id,
 
         title:
-          event.attributes.name,
-
-        summary:
-          event.attributes.summary,
-
-        image:
-          event.attributes.image_url
-            ? event.attributes.image_url.replace(/&amp;/g, "&")
-            : null,
-
-        date:
-          eventMap[event.id].date,
-
-        location:
-          eventMap[event.id].location,
-
-        url:
-          eventMap[event.id].url
-
-      }))
-
-      .sort((a,b) =>
-        new Date(a.date) -
-        new Date(b.date)
-      );
-
-    res.status(200).json(events);
-
-  } catch(error){
-
-    res.status(500).json({
-      error:error.message
-    });
-
-  }
-
-};
+ 
