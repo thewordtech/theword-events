@@ -11,9 +11,9 @@ module.exports = async (req, res) => {
       password: process.env.PCO_SECRET
     };
 
-    // Get all featured events
+    // Get only featured events
     let eventsUrl =
-  "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true";
+      "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true";
 
     let featuredEvents = [];
 
@@ -24,9 +24,7 @@ module.exports = async (req, res) => {
 
       featuredEvents =
         featuredEvents.concat(
-
-          response.data.data.
-
+          response.data.data
         );
 
       eventsUrl =
@@ -34,7 +32,99 @@ module.exports = async (req, res) => {
 
     }
 
-    // Build lookup by event id
+    // Build lookup
+    const featuredMap = {};
+
+    featuredEvents.forEach(event => {
+
+      featuredMap[event.id] = {
+
+        id: event.id,
+
+        title:
+          event.attributes.name,
+
+        image:
+          event.attributes.image_url
+            ? event.attributes.image_url.replace(/&amp;/g, "&")
+            : null,
+
+        date: null,
+        location: null,
+        url: null
+
+      };
+
+    });
+
+    const today =
+      new Date().toISOString();
+
+    let instancesUrl =
+      `https://api.planningcenteronline.com/calendar/v2/event_instances?where[starts_at][gte]=${today}&per_page=100`;
+
+    let foundCount = 0;
+
+    while (
+      instancesUrl &&
+      foundCount < featuredEvents.length
+    ) {
+
+      const response =
+        await axios.get(instancesUrl, { auth });
+
+      response.data.data.forEach(instance => {
+
+        const eventId =
+          instance.relationships.event.data.id;
+
+        if (
+          featuredMap[eventId] &&
+          !featuredMap[eventId].date
+        ) {
+
+          featuredMap[eventId].date =
+            instance.attributes.starts_at;
+
+          featuredMap[eventId].location =
+            instance.attributes.location;
+
+          featuredMap[eventId].url =
+            instance.attributes.church_center_url;
+
+          foundCount++;
+
+        }
+
+      });
+
+      instancesUrl =
+        response.data.links.next || null;
+
+    }
+
+    const events =
+      Object.values(featuredMap)
+
+      .filter(event => event.date)
+
+      .sort(
+        (a, b) =>
+          new Date(a.date) -
+          new Date(b.date)
+      );
+
+    res.status(200).json(events);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+};    // Build lookup by event id
     const featuredMap = {};
 
     featuredEvents.forEach(event => {
