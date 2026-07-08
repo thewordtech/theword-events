@@ -74,6 +74,7 @@ module.exports = async (req, res) => {
             : null,
 
         date: null,
+        endDate: null,
         location: null,
         url: null
 
@@ -109,6 +110,9 @@ module.exports = async (req, res) => {
 
           featuredMap[eventId].date =
             instance.attributes.starts_at;
+
+          featuredMap[eventId].endDate =
+            instance.attributes.ends_at;
 
           featuredMap[eventId].location =
             instance.attributes.location;
