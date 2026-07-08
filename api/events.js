@@ -32,14 +32,14 @@ module.exports = async (req, res) => {
         title: event.attributes.name,
         summary: event.attributes.summary,
         image: event.attributes.image_url
-          ? event.attributes.image_url.replaceAll("&amp;", "&")
+          ? event.attributes.image_url.replace(/&amp;/g, "&")
           : null,
         url: event.links.html
       }));
 
     res.status(200).json(events);
 
-  } catch(error) {
+  } catch (error) {
 
     res.status(500).json({
       error: error.message
