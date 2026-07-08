@@ -4,33 +4,19 @@ module.exports = async (req, res) => {
 
   try {
 
-    let url =
-      "https://api.planningcenteronline.com/calendar/v2/events";
-
-    let featuredCount = 0;
-    let totalCount = 0;
-
-    while(url){
-
-      const response = await axios.get(url,{
-        auth:{
-          username:process.env.PCO_CLIENT_ID,
-          password:process.env.PCO_SECRET
+    const response = await axios.get(
+      "https://api.planningcenteronline.com/calendar/v2/event_instances?where[starts_at][gte]=2026-07-07T00:00:00Z&per_page=25",
+      {
+        auth: {
+          username: process.env.PCO_CLIENT_ID,
+          password: process.env.PCO_SECRET
         }
-      });
-
-      totalCount += response.data.data.length;
-
-      featuredCount += response.data.data.filter(
-        e => e.attributes.featured === true
-      ).length;
-
-      url = response.data.links.next || null;
-    }
+      }
+    );
 
     res.status(200).json({
-      totalCount,
-      featuredCount
+      count: response.data.data.length,
+      first: response.data.data[0]
     });
 
   } catch(error){
