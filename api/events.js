@@ -2,35 +2,43 @@ const axios = require("axios");
 
 module.exports = async (req, res) => {
 
-  const auth = {
-    username: process.env.PCO_CLIENT_ID,
-    password: process.env.PCO_SECRET
-  };
-
   try {
 
-    const response = await axios.get(
-      "https://api.planningcenteronline.com/calendar/v2/events",
-      { auth }
-    );
+    let url =
+      "https://api.planningcenteronline.com/calendar/v2/events";
 
-    const featured = response.data.data
-      .filter(e => e.attributes.featured);
+    let featuredCount = 0;
+    let totalCount = 0;
 
-    res.status(200).json(
-      featured.slice(0, 5).map(e => ({
-        id: e.id,
-        title: e.attributes.name
-      }))
-    );
+    while(url){
+
+      const response = await axios.get(url,{
+        auth:{
+          username:process.env.PCO_CLIENT_ID,
+          password:process.env.PCO_SECRET
+        }
+      });
+
+      totalCount += response.data.data.length;
+
+      featuredCount += response.data.data.filter(
+        e => e.attributes.featured === true
+      ).length;
+
+      url = response.data.links.next || null;
+    }
+
+    res.status(200).json({
+      totalCount,
+      featuredCount
+    });
 
   } catch(error){
 
     res.status(500).json({
-      error: error.message
+      error:error.message
     });
 
   }
 
 };
-``
