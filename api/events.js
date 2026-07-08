@@ -16,6 +16,7 @@ module.exports = async (req, res) => {
       password: process.env.PCO_SECRET
     };
 
+    // Get featured events only
     let eventsUrl =
       "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true";
 
@@ -38,38 +39,7 @@ module.exports = async (req, res) => {
 
     const featuredMap = {};
 
-    for (const event of featuredEvents) {
-
-      let campuses = [];
-
-      try {
-
-        const tagsResponse =
-          await axios.get(
-            `https://api.planningcenteronline.com/calendar/v2/events/${event.id}/tags`,
-            { auth }
-          );
-
-        const tags =
-          tagsResponse.data.data || [];
-
-        campuses = tags
-          .map(tag => tag.attributes.name)
-          .filter(name =>
-            name === "The WORD @ Lakeside" ||
-            name === "The WORD @ Springtown" ||
-            name === "The WORD @ Aledo"
-          )
-          .map(name =>
-            name
-              .replace("The WORD @ ", "")
-          );
-
-      } catch (e) {
-
-        campuses = [];
-
-      }
+    featuredEvents.forEach(event => {
 
       featuredMap[event.id] = {
 
@@ -77,8 +47,6 @@ module.exports = async (req, res) => {
 
         title:
           event.attributes.name,
-
-        campuses,
 
         image:
           event.attributes.image_url
@@ -91,7 +59,7 @@ module.exports = async (req, res) => {
 
       };
 
-    }
+    });
 
     const today =
       new Date().toISOString();
@@ -107,10 +75,7 @@ module.exports = async (req, res) => {
     ) {
 
       const response =
-        await axios.get(
-          instancesUrl,
-          { auth }
-        );
+        await axios.get(instancesUrl, { auth });
 
       response.data.data.forEach(instance => {
 
