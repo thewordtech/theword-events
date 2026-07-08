@@ -6,7 +6,7 @@ module.exports = async (req, res) => {
 
   res.setHeader(
     "Cache-Control",
-    "s-maxage=900, stale-while-revalidate=3600"
+    "s-maxage=0"
   );
 
   try {
