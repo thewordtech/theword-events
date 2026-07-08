@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
     };
 
     let eventsUrl =
-      "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true&include=tags";
+      "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true";
 
     let featuredEvents = [];
 
@@ -38,25 +38,37 @@ module.exports = async (req, res) => {
 
     const featuredMap = {};
 
-    featuredEvents.forEach(event => {
+    for (const event of featuredEvents) {
 
-      const tagIds =
-        event.relationships.tags?.data?.map(
-          tag => tag.id
-        ) || [];
+      let campuses = [];
 
-      const campuses = [];
+      try {
 
-      if (tagIds.includes("245632")) {
-        campuses.push("Lakeside");
-      }
+        const tagsResponse =
+          await axios.get(
+            `https://api.planningcenteronline.com/calendar/v2/events/${event.id}/tags`,
+            { auth }
+          );
 
-      if (tagIds.includes("245633")) {
-        campuses.push("Springtown");
-      }
+        const tags =
+          tagsResponse.data.data || [];
 
-      if (tagIds.includes("343409")) {
-        campuses.push("Aledo");
+        campuses = tags
+          .map(tag => tag.attributes.name)
+          .filter(name =>
+            name === "The WORD @ Lakeside" ||
+            name === "The WORD @ Springtown" ||
+            name === "The WORD @ Aledo"
+          )
+          .map(name =>
+            name
+              .replace("The WORD @ ", "")
+          );
+
+      } catch (e) {
+
+        campuses = [];
+
       }
 
       featuredMap[event.id] = {
@@ -66,3 +78,91 @@ module.exports = async (req, res) => {
         title:
           event.attributes.name,
 
+        campuses,
+
+        image:
+          event.attributes.image_url
+            ? event.attributes.image_url.replace(/&amp;/g, "&")
+            : null,
+
+        date: null,
+        location: null,
+        url: null
+
+      };
+
+    }
+
+    const today =
+      new Date().toISOString();
+
+    let instancesUrl =
+      `https://api.planningcenteronline.com/calendar/v2/event_instances?where[starts_at][gte]=${today}&per_page=100`;
+
+    let foundCount = 0;
+
+    while (
+      instancesUrl &&
+      foundCount < 12
+    ) {
+
+      const response =
+        await axios.get(
+          instancesUrl,
+          { auth }
+        );
+
+      response.data.data.forEach(instance => {
+
+        const eventId =
+          instance.relationships.event.data.id;
+
+        if (
+          featuredMap[eventId] &&
+          !featuredMap[eventId].date
+        ) {
+
+          featuredMap[eventId].date =
+            instance.attributes.starts_at;
+
+          featuredMap[eventId].location =
+            instance.attributes.location;
+
+          featuredMap[eventId].url =
+            instance.attributes.church_center_url;
+
+          foundCount++;
+
+        }
+
+      });
+
+      instancesUrl =
+        response.data.links.next || null;
+
+    }
+
+    const events =
+      Object.values(featuredMap)
+
+        .filter(event => event.date)
+
+        .sort(
+          (a, b) =>
+            new Date(a.date) -
+            new Date(b.date)
+        )
+
+        .slice(0, 12);
+
+    res.status(200).json(events);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+};
