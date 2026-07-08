@@ -6,47 +6,45 @@ module.exports = async (req, res) => {
 
   try {
 
-    const auth = {
-      username: process.env.PCO_CLIENT_ID,
-      password: process.env.PCO_SECRET
-    };
-
-    // Load all events
-    let eventsUrl =
+    let url =
       "https://api.planningcenteronline.com/calendar/v2/events";
 
     let allEvents = [];
 
-    while (eventsUrl) {
+    while (url) {
 
-      const response =
-        await axios.get(eventsUrl,{auth});
+      const response = await axios.get(url, {
+        auth: {
+          username: process.env.PCO_CLIENT_ID,
+          password: process.env.PCO_SECRET
+        }
+      });
 
-      allEvents =
-        allEvents.concat(response.data.data);
+      allEvents = allEvents.concat(response.data.data);
 
-      eventsUrl =
-        response.data.links.next || null;
-
+      url = response.data.links.next || null;
     }
 
-    // Load all event instances
-    let instanceUrl =
-      "https://api.planningcenteronline.com/calendar/v2/event_instances";
+    const events = allEvents
+      .filter(event => event.attributes.featured === true)
+      .map(event => ({
+        id: event.id,
+        title: event.attributes.name,
+        summary: event.attributes.summary,
+        image: event.attributes.image_url
+          ? event.attributes.image_url.replaceAll("&amp;", "&")
+          : null,
+        url: event.links.html
+      }));
 
-    let allInstances = [];
+    res.status(200).json(events);
 
-    while (instanceUrl) {
+  } catch(error) {
 
-      const response =
-        await axios.get(instanceUrl,{auth});
+    res.status(500).json({
+      error: error.message
+    });
 
-      allInstances =
-        allInstances.concat(response.data.data);
+  }
 
-      instanceUrl =
-        response.data.links.next || null;
-
-    }
-
-    const now = new 
+};
