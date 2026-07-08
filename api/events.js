@@ -4,6 +4,11 @@ module.exports = async (req, res) => {
 
   res.setHeader("Access-Control-Allow-Origin", "*");
 
+  res.setHeader(
+    "Cache-Control",
+    "s-maxage=900, stale-while-revalidate=3600"
+  );
+
   try {
 
     const auth = {
@@ -11,7 +16,7 @@ module.exports = async (req, res) => {
       password: process.env.PCO_SECRET
     };
 
-    // Get featured events only
+    // Featured events only
     let eventsUrl =
       "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true";
 
@@ -32,7 +37,6 @@ module.exports = async (req, res) => {
 
     }
 
-    // Build lookup
     const featuredMap = {};
 
     featuredEvents.forEach(event => {
@@ -67,7 +71,7 @@ module.exports = async (req, res) => {
 
     while (
       instancesUrl &&
-      foundCount < 20
+      foundCount < 12
     ) {
 
       const response =
@@ -114,7 +118,7 @@ module.exports = async (req, res) => {
             new Date(b.date)
         )
 
-        .slice(0, 20);
+        .slice(0, 12);
 
     res.status(200).json(events);
 
