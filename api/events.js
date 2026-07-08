@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
     const today = new Date().toISOString();
 
     const response = await axios.get(
-      `https://api.planningcenteronline.com/calendar/v2/event_instances?where[starts_at][gte]=${today}&per_page=1&include=*`,
+      `https://api.planningcenteronline.com/calendar/v2/event_instances?where[starts_at][gte]=${today}&per_page=1&include=event`,
       { auth }
     );
 
@@ -27,4 +27,3 @@ module.exports = async (req, res) => {
   }
 
 };
-``
