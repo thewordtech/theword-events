@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
 
     // Get all featured events
     let eventsUrl =
-      "https://api.planningcenteronline.com/calendar/v2/events";
+  "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true";
 
     let featuredEvents = [];
 
@@ -25,9 +25,7 @@ module.exports = async (req, res) => {
       featuredEvents =
         featuredEvents.concat(
 
-          response.data.data.filter(
-            event => event.attributes.featured === true
-          )
+          response.data.data.
 
         );
 
