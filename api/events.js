@@ -11,7 +11,6 @@ module.exports = async (req, res) => {
       password: process.env.PCO_SECRET
     };
 
-    // Get all featured events
     let url =
       "https://api.planningcenteronline.com/calendar/v2/events";
 
@@ -19,8 +18,9 @@ module.exports = async (req, res) => {
 
     while (url) {
 
-      const response =
-        await axios.get(url, { auth });
+      const response = await axios.get(url, {
+        auth
+      });
 
       featuredEvents = featuredEvents.concat(
         response.data.data.filter(
@@ -33,14 +33,15 @@ module.exports = async (req, res) => {
 
     }
 
-    // Get future event instances
     const today =
       new Date().toISOString();
 
     const instanceResponse =
       await axios.get(
         `https://api.planningcenteronline.com/calendar/v2/event_instances?where[starts_at][gte]=${today}&per_page=100`,
-        { auth }
+        {
+          auth
+        }
       );
 
     const futureInstances =
@@ -53,32 +54,5 @@ module.exports = async (req, res) => {
       const eventId =
         instance.relationships.event.data.id;
 
-      const startDate =
-        instance.attributes.starts_at;
-
-      if (
-        !eventMap[eventId] ||
-        new Date(startDate) <
-        new Date(eventMap[eventId].date)
-      ) {
-
-        eventMap[eventId] = {
-          date: startDate,
-          location: instance.attributes.location,
-          url: instance.attributes.church_center_url
-        };
-
-      }
-
-    });
-
-    const events = featuredEvents
-
-      .filter(event => eventMap[event.id])
-
-      .map(event => ({
-
-        id: event.id,
-
-        title:
- 
+      eventMap[eventId] = {
+    
