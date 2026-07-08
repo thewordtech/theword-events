@@ -5,7 +5,7 @@ module.exports = async (req, res) => {
   try {
 
     const response = await axios.get(
-      "https://api.planningcenteronline.com/calendar/v2/event_instances",
+      "https://api.planningcenteronline.com/calendar/v2/event_instances?per_page=25",
       {
         auth: {
           username: process.env.PCO_CLIENT_ID,
@@ -14,9 +14,7 @@ module.exports = async (req, res) => {
       }
     );
 
-    res.status(200).json(
-      response.data.data[0]
-    );
+    res.status(200).json(response.data.links);
 
   } catch(error){
 
