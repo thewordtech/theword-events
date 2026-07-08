@@ -5,7 +5,7 @@ module.exports = async (req, res) => {
   try {
 
     const response = await axios.get(
-      "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true&include=tags",
+      "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true&include=tags&per_page=1",
       {
         auth: {
           username: process.env.PCO_CLIENT_ID,
@@ -14,9 +14,11 @@ module.exports = async (req, res) => {
       }
     );
 
-    res.status(200).json(response.data);
+    res.status(200).json(
+      response.data.included
+    );
 
-  } catch (error) {
+  } catch(error){
 
     res.status(500).json({
       error: error.message
