@@ -2,94 +2,45 @@ const axios = require("axios");
 
 module.exports = async (req, res) => {
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const auth = {
+    username: process.env.PCO_CLIENT_ID,
+    password: process.env.PCO_SECRET
+  };
 
   try {
 
-    const auth = {
-      username: process.env.PCO_CLIENT_ID,
-      password: process.env.PCO_SECRET
-    };
+    let pageCount = 0;
+    let instanceCount = 0;
 
-    // Load all events
-    let eventsUrl =
-      "https://api.planningcenteronline.com/calendar/v2/events";
-
-    let allEvents = [];
-
-    while(eventsUrl){
-
-      const response =
-        await axios.get(eventsUrl,{auth});
-
-      allEvents =
-        allEvents.concat(response.data.data);
-
-      eventsUrl =
-        response.data.links.next || null;
-
-    }
-
-    // Load event instances
-    let instancesUrl =
+    let url =
       "https://api.planningcenteronline.com/calendar/v2/event_instances";
 
-    let allInstances = [];
+    while(url){
 
-    while(instancesUrl){
+      pageCount++;
 
       const response =
-        await axios.get(instancesUrl,{auth});
+        await axios.get(url,{auth});
 
-      allInstances =
-        allInstances.concat(response.data.data);
+      instanceCount +=
+        response.data.data.length;
 
-      instancesUrl =
+      url =
         response.data.links.next || null;
 
     }
 
-    const now = new Date();
+    res.status(200).json({
+      pages: pageCount,
+      instances: instanceCount
+    });
 
-    const futureFeaturedEvents =
-      allEvents
+  } catch(error){
 
-      .filter(event =>
-        event.attributes.featured === true
-      )
+    res.status(500).json({
+      error:error.message
+    });
 
-      .map(event => {
+  }
 
-        const futureInstances =
-          allInstances.filter(instance => {
-
-            return (
-              instance.relationships.event &&
-              instance.relationships.event.data &&
-              instance.relationships.event.data.id === event.id &&
-              new Date(
-                instance.attributes.starts_at
-              ) > now
-            );
-
-          });
-
-        if(!futureInstances.length)
-          return null;
-
-        futureInstances.sort(
-          (a,b) =>
-            new Date(a.attributes.starts_at) -
-            new Date(b.attributes.starts_at)
-        );
-
-        const nextDate =
-          futureInstances[0];
-
-        return {
-
-          id:
-            event.id,
-
-          title:
- 
+};
