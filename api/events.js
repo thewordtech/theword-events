@@ -16,9 +16,8 @@ module.exports = async (req, res) => {
       password: process.env.PCO_SECRET
     };
 
-    // Get featured events only
     let eventsUrl =
-      "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true";
+      "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true&include=tags";
 
     let featuredEvents = [];
 
@@ -41,12 +40,33 @@ module.exports = async (req, res) => {
 
     featuredEvents.forEach(event => {
 
+      const tagIds =
+        event.relationships?.tags?.data?.map(
+          tag => tag.id
+        ) || [];
+
+      const campuses = [];
+
+      if (tagIds.includes("245632")) {
+        campuses.push("Lakeside");
+      }
+
+      if (tagIds.includes("245633")) {
+        campuses.push("Springtown");
+      }
+
+      if (tagIds.includes("343409")) {
+        campuses.push("Aledo");
+      }
+
       featuredMap[event.id] = {
 
         id: event.id,
 
         title:
           event.attributes.name,
+
+        campuses,
 
         image:
           event.attributes.image_url
