@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
       password: process.env.PCO_SECRET
     };
 
-    // Fetch featured events (sparse fieldset — only what we use)
+    // Fetch featured events (sparse fieldset is safe here — attributes only, no relationships needed beyond tags via include)
     let eventsUrl =
       "https://api.planningcenteronline.com/calendar/v2/events?where[featured]=true&include=tags&fields[Event]=name,image_url";
     let featuredEvents = [];
@@ -47,11 +47,11 @@ module.exports = async (req, res) => {
       };
     });
 
-    // Fetch event instances — first page, then remaining pages in parallel
+    // Fetch event instances — NO sparse fieldset here, we need relationships intact
     const today = new Date().toISOString();
     const perPage = 100;
     const baseInstancesUrl =
-      `https://api.planningcenteronline.com/calendar/v2/event_instances?where[starts_at][gte]=${today}&per_page=${perPage}&fields[EventInstance]=starts_at,ends_at,location,church_center_url`;
+      `https://api.planningcenteronline.com/calendar/v2/event_instances?where[starts_at][gte]=${today}&per_page=${perPage}`;
 
     const first = await axios.get(baseInstancesUrl, { auth });
     let allInstances = [...first.data.data];
@@ -72,7 +72,9 @@ module.exports = async (req, res) => {
     }
 
     allInstances.forEach(instance => {
-      const eventId = instance.relationships.event.data.id;
+      const eventId = instance.relationships?.event?.data?.id;
+      if (!eventId) return; // skip instances with no linked event
+
       const event = featuredMap[eventId];
       if (!event) return;
 
